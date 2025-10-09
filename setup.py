@@ -1,39 +1,55 @@
 from setuptools import setup, find_packages
+from pathlib import Path
+
+# Safely load README
+readme_path = Path(__file__).parent / "README.md"
+long_description = readme_path.read_text(encoding="utf-8") if readme_path.exists() else ""
 
 setup(
     name="HoyoSophonDL",
-    version="1.0.0",
+    version="1.0.1",
     author="Mr.Jo0x01",
     author_email="",
-    description="HoyoSophonDL CLI is a Python-based simple reimplementation of HoYoPlay’s downloader logic. It allows users to list, validate, and download game assets directly from HoYoPlay manifests,with support for multi-threading, resumable downloads, and optional GUI mode.",
-    long_description=open("README.md", encoding="utf-8").read() if open("README.md", "r", encoding="utf-8") else "",
+    description=(
+        "HoyoSophonDL CLI is a Python-based reimplementation of HoYoPlay’s downloader logic. "
+        "It allows users to list, validate, and download game assets directly from HoYoPlay manifests, "
+        "with support for multi-threading, resumable downloads, and optional GUI mode."
+    ),
+    long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/Jo0X01/HoyoSophonDL",
     packages=find_packages(),
     include_package_data=True,
+
     install_requires=[
-        "certifi==2025.10.5",
-        "charset-normalizer==3.4.3",
-        "colorama==0.4.6",
-        "idna==3.10",
-        "loguru==0.7.3",
-        "lz4==4.4.4",
-        "markdown-it-py==4.0.0",
-        "mdurl==0.1.2",
-        "packaging==25.0",
-        "protobuf==6.32.1",
-        "Pygments==2.19.2",
-        "PyQt6==6.9.1",
-        "PyQt6-Qt6==6.9.2",
-        "PyQt6_sip==13.10.2",
-        "python-magic==0.4.27",
-        "python-magic-bin==0.4.14",
-        "requests==2.32.5",
-        "rich==14.1.0",
-        "urllib3==2.5.0",
-        "win32_setctime==1.2.0",
-        "zstandard==0.25.0",
+        "certifi>=2025.10.5",
+        "charset-normalizer>=3.4.3",
+        "colorama>=0.4.6",
+        "idna>=3.10",
+        "loguru>=0.7.3",
+        "lz4>=4.4.4",
+        "markdown-it-py>=4.0.0",
+        "mdurl>=0.1.2",
+        "packaging>=25.0",
+        "protobuf>=6.32.1",
+        "Pygments>=2.19.2",
+        "requests>=2.32.5",
+        "rich>=14.1.0",
+        "urllib3>=2.5.0",
+        "zstandard>=0.25.0",
+        "win32_setctime>=1.2.0; platform_system=='Windows'",
+        "python-magic-bin>=0.4.14; platform_system=='Windows'",
+        "python-magic>=0.4.27; platform_system!='Windows'",
     ],
+
+    extras_require={
+        "gui": [
+            "PyQt6>=6.9.1",
+            "PyQt6-Qt6>=6.9.2",
+            "PyQt6_sip>=13.10.2",
+        ]
+    },
+
     entry_points={
         "console_scripts": [
             "hs_dl = HoyoSophonDL.__main__:main",
@@ -43,12 +59,16 @@ setup(
             "HoyoSophonDL = HoyoSophonDL.__main__:main",
         ],
     },
+
     classifiers=[
         "Programming Language :: Python :: 3.11",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Operating System :: Microsoft :: Windows",
+        "Operating System :: POSIX :: Linux",
+        "Operating System :: MacOS",
         "Topic :: Games/Entertainment",
         "Topic :: Software Development :: Libraries :: Application Frameworks",
     ],
+
     python_requires=">=3.9",
 )

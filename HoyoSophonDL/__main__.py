@@ -12,7 +12,7 @@ from rich.progress import (
 )
 from HoyoSophonDL import HoyoSophonDL, Branch, Region
 from HoyoSophonDL.download import GlobalDownloadData
-from HoyoSophonDL.gui import run_gui_pyqt6
+
 
 console = Console()
 
@@ -102,6 +102,10 @@ def main():
     args = parser.parse_args()
 
     if args.gui:
+        try:
+            from HoyoSophonDL.gui import run_gui_pyqt6
+        except ImportError:
+            sys.exit("[ERROR] PyQt6 not installed or not supported on this system.")
         return run_gui_pyqt6()
 
     if args.game is None and not args.list:

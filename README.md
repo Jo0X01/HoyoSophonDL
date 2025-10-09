@@ -50,8 +50,16 @@ pip install .
 ```
 
 ### Option 2 — Install from PyPI *(after publishing)*
+#### CLI-only (lightweight):
+
 ```bash
 pip install HoyoSophonDL
+```
+
+#### With GUI (PyQt6) support:
+
+```bash
+pip install HoyoSophonDL[gui]
 ```
 
 If you plan to build an executable:
