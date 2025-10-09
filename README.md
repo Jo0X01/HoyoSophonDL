@@ -37,7 +37,7 @@ Its primary goals are to:
 ## 🧩 Installation
 
 ### Option 1 — Install from GitHub
-If the package isn’t yet on PyPI, you can install it directly:
+If the package isn’t on PyPI, you can install it directly:
 ```bash
 pip install git+https://github.com/Jo0X01/HoyoSophonDL.git
 ```
