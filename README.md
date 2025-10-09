@@ -39,12 +39,12 @@ Its primary goals are to:
 ### Option 1 — Install from GitHub
 If the package isn’t yet on PyPI, you can install it directly:
 ```bash
-pip install git+https://github.com/<your_username>/HoyoSophonDL.git
+pip install git+https://github.com/Jo0X01/HoyoSophonDL.git
 ```
 
 Or clone and install manually:
 ```bash
-git clone https://github.com/<your_username>/HoyoSophonDL.git
+git clone https://github.com/Jo0X01/HoyoSophonDL.git
 cd HoyoSophonDL
 pip install .
 ```
