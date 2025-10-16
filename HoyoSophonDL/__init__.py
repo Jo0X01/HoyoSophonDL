@@ -25,6 +25,7 @@ class HoyoSophonDL:
         branch: Branch = Branch.MAIN,
         region: Region = Region.EUROPE,
         verbose: bool = False,
+        timeout: int = 30
     ):
         """
         Initialize the HoyoSophonDL.
@@ -33,7 +34,7 @@ class HoyoSophonDL:
             branch (Branch): The branch of the game (default: Branch.MAIN).
             region (Region): The game server region (default: Region.EUROPE).
         """
-        self._launcher = LauncherClient(branch, region, verbose)
+        self._launcher = LauncherClient(branch, region, verbose,timeout)
 
     @property
     def config(self):
