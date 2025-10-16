@@ -174,9 +174,10 @@ class DownloadWorker(QObject):
 
 # ------------------ Main GUI ------------------ #
 class LauncherGUI(QWidget):
-    def __init__(self,workers=20, timeout=30):
+    def __init__(self,workers=20, timeout=30,verbose:bool = False):
         self._workers = workers
         self._timeout = timeout
+        self._verbose = verbose
         super().__init__()
         self.setWindowTitle("HoYoPlaySophonDownloader - By: Mr.Jo0x01 ♥")
         self.setWindowIcon(QIcon(resource_path("assets/hoyo.ico")))
@@ -225,7 +226,8 @@ class LauncherGUI(QWidget):
         self.region_combo = QComboBox()
         self.region_combo.addItems([r.value for r in Region])
         self.verbose_checkbox = QCheckBox("Verbose")
-
+        self.verbose_checkbox.setChecked(self._verbose)
+        
         self.game_combo = QComboBox()
         self.game_combo.addItem("Select Game...")
         self.category_combo = QComboBox()
