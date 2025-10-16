@@ -20,6 +20,15 @@ from HoyoSophonDL.parser import (
 from HoyoSophonDL.config import logger
 
 
+class TimeoutSession(requests.Session):
+    def __init__(self, timeout=10):
+        super().__init__()
+        self._timeout = timeout
+
+    def request(self, *args, **kwargs):
+        kwargs.setdefault("timeout", self._timeout)
+        return super().request(*args, **kwargs)
+
 class LauncherClient:
     """
     Client for interacting with the Sophon Launcher API.
@@ -28,7 +37,7 @@ class LauncherClient:
     """
 
     _trace = None
-    def __init__(self, branch: Branch = Branch.MAIN, region: Region = Region.EUROPE, verbose: bool = False):
+    def __init__(self, branch: Branch = Branch.MAIN, region: Region = Region.EUROPE, verbose: bool = False,timeout:int = 30):
         """
         Initialize the client with a branch and region.
 
@@ -38,7 +47,8 @@ class LauncherClient:
             verbose (bool): Enable verbose DEBUG logging if True.
         """
         # Pass verbose flag down to parser/config
-        self._httpClient = requests.Session()
+        self._httpClient = TimeoutSession(timeout)
+
         self.parser = LauncherParser(branch, region,verbose)
         logger.debug(f"Initialized LauncherClient with branch={branch.name}, region={region.name}")
 
@@ -192,28 +202,3 @@ class LauncherClient:
         else:
             logger.warning("ALL Assets Not Downloaded Cancelled Flag")
         return _trace
-
-
-# _Launcher = LauncherClient()
-
-# game = _Launcher.get_avalibale_games().getByName("Genshin Impact")
-# print(game.DisplayStatus)
-# _info = _Launcher.get_game_info(game.GameID)
-# print(_info.LastVersion)
-
-# manifest = _Launcher.get_main_manifest(_info)
-# for m in manifest.manifests:
-#     print(vars(m))
-
-# manifest = manifest.getByName("game")
-# assets = _Launcher.get_manifest_assets(manifest)
-
-# print(assets.version)
-# print(assets.FilesCount)
-# print(assets.TotalFSize)
-# print(assets.TotalSize)
-# print(assets.ChunksCount)
-
-# open("ResponseAPIs/getManifestAssets.json", "wb").write(assets.getJson().encode())
-
-# open("ResponseAPIs/getAvaliableGames.json","wb").write(.getJson().encode())
