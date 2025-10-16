@@ -174,7 +174,9 @@ class DownloadWorker(QObject):
 
 # ------------------ Main GUI ------------------ #
 class LauncherGUI(QWidget):
-    def __init__(self):
+    def __init__(self,workers=20, timeout=30):
+        self._workers = workers
+        self._timeout = timeout
         super().__init__()
         self.setWindowTitle("HoYoPlaySophonDownloader - By: Mr.Jo0x01 ♥")
         self.setWindowIcon(QIcon(resource_path("assets/hoyo.ico")))
@@ -318,6 +320,7 @@ class LauncherGUI(QWidget):
             branch=Branch(self.branch_combo.currentText()),
             region=Region(self.region_combo.currentText()),
             verbose=self.verbose_checkbox.isChecked(),
+            timeout=self._timeout
         )
 
         self.games_dict = {}
@@ -386,6 +389,7 @@ class LauncherGUI(QWidget):
             branch=Branch(self.branch_combo.currentText()),
             region=Region(self.region_combo.currentText()),
             verbose=self.verbose_checkbox.isChecked(),
+            timeout=self._timeout
         )
         self._refresh_worker = RefreshWorker(self.launcher)
         self._refresh_worker.log_signal.connect(self.append_log)
@@ -569,7 +573,7 @@ class LauncherGUI(QWidget):
         self.status_label.setText("Status: Preparing download...")
 
         # start worker
-        self.worker = DownloadWorker(self.launcher, assets, output_dir)
+        self.worker = DownloadWorker(self.launcher, assets, output_dir,self._workers)
         self.worker.progress_signal.connect(self._update_progress)
         self.worker.status_signal.connect(self._update_status)
         self.worker.log_signal.connect(self.append_log)
@@ -737,8 +741,9 @@ class LauncherGUI(QWidget):
     def _on_launcher_options_changed(self):
         self.refresh_games()
 
-def run_gui_pyqt6():
+
+def run_gui_pyqt6(workers=20, timeout=30, verbose=False):
     app = QApplication(sys.argv)
-    gui = LauncherGUI()
+    gui = LauncherGUI(workers=workers, timeout=timeout, verbose=verbose)
     gui.show()
     sys.exit(app.exec())
