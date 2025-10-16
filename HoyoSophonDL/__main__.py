@@ -94,7 +94,10 @@ def main():
     parser.add_argument("--launcher-id", help="Override launcher ID")
     parser.add_argument("--launcher-platform", help="Override launcher platform ID")
     parser.add_argument(
-        "-t", "--threads", type=int, default=20, help="Download threads"
+        "-th", "--threads", type=int, default=20, help="Download threads"
+    )
+    parser.add_argument(
+        "-t", "--timeout", type=int, default=30, help="Download timeout"
     )
     parser.add_argument("-v", "--verbose", action="store_true", help="Verbose logging")
     parser.add_argument("-g", "--gui", action="store_true", help="Start GUI")
@@ -106,7 +109,7 @@ def main():
             from HoyoSophonDL.gui import run_gui_pyqt6
         except ImportError:
             sys.exit("[ERROR] PyQt6 not installed or not supported on this system.")
-        return run_gui_pyqt6()
+        return run_gui_pyqt6(workers=args.threads, timeout=args.timeout, verbose=args.verbose)
 
     if args.game is None and not args.list:
         sys.exit("[ERROR] Provide a game name or use -l to list games")
@@ -118,7 +121,7 @@ def main():
         sys.exit(f"[ERROR] {e}")
 
     launcher = HoyoSophonDL(
-        branch=args.branch, region=args.region, verbose=args.verbose
+        branch=args.branch, region=args.region, verbose=args.verbose,timeout=args.timeout
     )
 
     if args.list:
@@ -155,7 +158,7 @@ def main():
                 game, args.current, args.update, args.category
             )
         console.print(f"[green]Starting download for {game.Name}...[/green]")
-        rich_download(launcher, assets, args.output, args.threads)
+        rich_download(launcher, assets, args.output, args.threads,args.timeout)
 
 
 if __name__ == "__main__":
