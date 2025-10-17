@@ -3,6 +3,7 @@ import re
 import time
 from urllib.request import urlopen
 from concurrent.futures import ThreadPoolExecutor, Future
+
 from PyQt6.QtWidgets import (
     QApplication,
     QWidget,
@@ -17,8 +18,9 @@ from PyQt6.QtWidgets import (
     QMessageBox,
     QCheckBox,
     QMenuBar,
+    QMenu,
 )
-from PyQt6.QtGui import QPixmap, QFont, QTextCursor, QIcon, QDesktopServices, QAction
+from PyQt6.QtGui import QPixmap, QFont, QTextCursor, QIcon, QDesktopServices,QAction
 from PyQt6.QtCore import Qt, pyqtSignal, QObject, QTimer, QMutex, QThread, QUrl
 
 # ---- HoyoSophon modules ----
@@ -27,7 +29,8 @@ from HoyoSophonDL.download import GlobalDownloadData
 from HoyoSophonDL.help import format_bytes
 from HoyoSophonDL.structs.GamesInfo import AvaliableGame
 from HoyoSophonDL.structs.SophonManifest import SophonManifestProtoAssets
-import sys, os
+import os
+
 
 def resource_path(relative_path: str) -> str:
     """
@@ -39,6 +42,7 @@ def resource_path(relative_path: str) -> str:
     except Exception:
         base_path = os.path.abspath(".")
     return os.path.join(base_path, relative_path)
+
 
 # ------------------ Log Stream ------------------ #
 class EmittingStream(QObject):
@@ -174,7 +178,7 @@ class DownloadWorker(QObject):
 
 # ------------------ Main GUI ------------------ #
 class LauncherGUI(QWidget):
-    def __init__(self,workers=20, timeout=30,verbose:bool = False):
+    def __init__(self, workers=20, timeout=30, verbose: bool = False):
         self._workers = workers
         self._timeout = timeout
         self._verbose = verbose
@@ -195,9 +199,7 @@ class LauncherGUI(QWidget):
         menu_bar = QMenuBar(self)
         about_action = QAction(QIcon(), "About", self)
         about_action.triggered.connect(
-            lambda: QDesktopServices.openUrl(
-                QUrl("https://github.com/Jo0X01")
-            )
+            lambda: QDesktopServices.openUrl(QUrl("https://github.com/Jo0X01"))
         )
         menu_bar.addAction(about_action)
         self.main_layout.setMenuBar(menu_bar)
@@ -227,7 +229,7 @@ class LauncherGUI(QWidget):
         self.region_combo.addItems([r.value for r in Region])
         self.verbose_checkbox = QCheckBox("Verbose")
         self.verbose_checkbox.setChecked(self._verbose)
-        
+
         self.game_combo = QComboBox()
         self.game_combo.addItem("Select Game...")
         self.category_combo = QComboBox()
@@ -256,6 +258,36 @@ class LauncherGUI(QWidget):
         self.controls_layout.addWidget(self.pause_btn)
         self.controls_layout.addWidget(self.cancel_btn)
         self.controls_layout.addWidget(self.verbose_checkbox)
+
+        # ---- Command preview & Hide Images toggle
+        self.cmd_layout = QHBoxLayout()
+        self.hide_images_btn = QPushButton("Hide Images")
+        self.hide_images_btn.setCheckable(True)
+        self.hide_images_btn.clicked.connect(self._toggle_images)
+
+        self.cmd_preview = QTextEdit()
+        self.cmd_preview.setReadOnly(True)
+        # self.cmd_preview.setFixedHeight(40)
+        self.cmd_preview.setMaximumHeight(30)
+        self.cmd_preview.setStyleSheet(
+            """
+            QTextEdit {
+                background-color: #070707;
+                color: #b6ffb6;
+                border: 1px solid #333;
+                font-family: Consolas, monospace;
+                font-size: 12px;
+            }
+        """
+        )
+
+        # add context menu to allow copy
+        self.cmd_preview.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.cmd_preview.customContextMenuRequested.connect(self._cmd_context_menu)
+
+        self.cmd_layout.addWidget(self.hide_images_btn)
+        self.cmd_layout.addWidget(self.cmd_preview)
+        self.main_layout.addLayout(self.cmd_layout)
 
         # ---- Progress bar
         self.progress_bar = QProgressBar()
@@ -317,16 +349,31 @@ class LauncherGUI(QWidget):
         self.pause_btn.clicked.connect(self.toggle_pause)
         self.cancel_btn.clicked.connect(self.cancel_download)
 
+        # also update command preview when these controls change
+        for combo in [
+            self.branch_combo,
+            self.region_combo,
+            self.game_combo,
+            self.category_combo,
+            self.current_version_combo,
+            self.update_version_combo,
+        ]:
+            combo.currentIndexChanged.connect(self._update_cli_command)
+        self.verbose_checkbox.stateChanged.connect(self._update_cli_command)
+
         # ---- Launcher
         self.launcher = HoyoSophonDL(
             branch=Branch(self.branch_combo.currentText()),
             region=Region(self.region_combo.currentText()),
             verbose=self.verbose_checkbox.isChecked(),
-            timeout=self._timeout
+            timeout=self._timeout,
         )
 
         self.games_dict = {}
         self.worker = None
+
+        # initialize command preview
+        self._update_cli_command()
 
         self.refresh_games()
 
@@ -391,7 +438,7 @@ class LauncherGUI(QWidget):
             branch=Branch(self.branch_combo.currentText()),
             region=Region(self.region_combo.currentText()),
             verbose=self.verbose_checkbox.isChecked(),
-            timeout=self._timeout
+            timeout=self._timeout,
         )
         self._refresh_worker = RefreshWorker(self.launcher)
         self._refresh_worker.log_signal.connect(self.append_log)
@@ -412,6 +459,9 @@ class LauncherGUI(QWidget):
         self.game_combo.addItem("Select Game...")
         for g in games_obj.Games:
             self.game_combo.addItem(g.Name)
+
+        # try to preserve CLI command target if previously selected
+        self._update_cli_command()
         self._on_game_selected(0)
 
     # ---------- Game info ----------
@@ -429,6 +479,8 @@ class LauncherGUI(QWidget):
         self._refresh_worker.log_signal.connect(self.append_log)
         self._refresh_worker.finished_signal.connect(self._on_game_info_fetched)
         self._refresh_worker.start()
+        # update generated CLI preview
+        self._update_cli_command()
 
     def _on_game_info_fetched(self, info):
         self.disable_inputs(True)
@@ -477,18 +529,17 @@ class LauncherGUI(QWidget):
         self.category_combo.addItems(info.getCategoryByName())
         self.current_version_combo.clear()
         self.current_version_combo.addItem("Latest version")
-        self.current_version_combo.addItems(
-            [info.LastVersion] + (info.OtherVersion or [])
-        )
+        self.current_version_combo.addItems([info.LastVersion] + (info.OtherVersion or []))
         self.update_version_combo.clear()
         self.update_version_combo.addItem("Latest version")
-        self.update_version_combo.addItems(
-            [info.LastVersion] + (info.OtherVersion or [])
-        )
+        self.update_version_combo.addItems([info.LastVersion] + (info.OtherVersion or []))
         self.status_label.setText(f"Status: Last Version {info.LastVersion}")
         self.loading_timer.stop()
         self.loading_label.setText("")
         self.disable_inputs(False)
+
+        # whenever info loaded, update generated command
+        self._update_cli_command()
 
     def _clear_game_info(self):
         self.overlay_name.setText("Choose a game to start")
@@ -501,6 +552,7 @@ class LauncherGUI(QWidget):
         self.current_version_combo.addItem("Latest version")
         self.update_version_combo.clear()
         self.update_version_combo.addItem("Latest version")
+        self._update_cli_command()
 
     # ---------- Download ----------
     def start_download(self):
@@ -575,7 +627,7 @@ class LauncherGUI(QWidget):
         self.status_label.setText("Status: Preparing download...")
 
         # start worker
-        self.worker = DownloadWorker(self.launcher, assets, output_dir,self._workers)
+        self.worker = DownloadWorker(self.launcher, assets, output_dir, self._workers)
         self.worker.progress_signal.connect(self._update_progress)
         self.worker.status_signal.connect(self._update_status)
         self.worker.log_signal.connect(self.append_log)
@@ -673,9 +725,7 @@ class LauncherGUI(QWidget):
         self.is_paused = False
         self.pause_btn.setDisabled(True)
         self.status_label.setText("⏸ Pausing current chunk...")
-        self.append_log(
-            "[INFO] Pause requested; waiting for current chunk to finish..."
-        )
+        self.append_log("[INFO] Pause requested; waiting for current chunk to finish...")
         # if pause confirmation never comes (network issues), re-enable the pause button after a timeout
         QTimer.singleShot(1000, self._pause_timeout)
 
@@ -683,15 +733,11 @@ class LauncherGUI(QWidget):
         # If still waiting for pause after timeout, allow user to resume/poke again
         if self.waiting_for_pause and not self.is_paused:
             self.waiting_for_pause = False
-            self.is_paused = (
-                True  # treat as paused to avoid endless waiting (best-effort)
-            )
+            self.is_paused = True  # treat as paused to avoid endless waiting (best-effort)
             self.pause_btn.setDisabled(False)
             self.pause_btn.setText("Resume")
             self.status_label.setText("⏸ Paused (forced timeout)")
-            self.append_log(
-                "[WARN] Pause confirmation timed out; entering best-effort paused state."
-            )
+            self.append_log("[WARN] Pause confirmation timed out; entering best-effort paused state.")
 
     def cancel_download(self):
         trace = self.launcher.trace_download
@@ -741,7 +787,66 @@ class LauncherGUI(QWidget):
             w.setDisabled(disable)
 
     def _on_launcher_options_changed(self):
+        # refresh games whenever branch/region/verbose changes
         self.refresh_games()
+        self._update_cli_command()
+
+    # ---------- Command preview helpers ----------
+    def _update_cli_command(self):
+        """Generate the equivalent CLI command for the current GUI settings."""
+        game = self.game_combo.currentText()
+        if not game or game == "Select Game...":
+            game = "<GameName>"
+
+        branch = self.branch_combo.currentText()
+        region = self.region_combo.currentText()
+        category = self.category_combo.currentText()
+        current_v = self.current_version_combo.currentText()
+        update_v = self.update_version_combo.currentText()
+
+        # base command
+        cmd = f'HoyoSophonDL "{game}" -b {branch} -r {region} -th {self._workers} -t {self._timeout}'
+        if self.verbose_checkbox.isChecked():
+            cmd += " -v"
+        if category and "Select" not in category:
+            cmd += f" -c {category}"
+        if current_v and "Latest" not in current_v:
+            cmd += f" -V {current_v}"
+        if update_v and "Latest" not in update_v:
+            cmd += f" -U {update_v}"
+        # include download flag as likely intent when using GUI preview
+        cmd += " -d"
+
+        self.cmd_preview.setPlainText(cmd)
+
+    def _cmd_context_menu(self, pos):
+        menu = QMenu(self)
+        copy_action = QAction("Copy command", self)
+        copy_action.triggered.connect(self._copy_cmd_to_clipboard)
+        menu.addAction(copy_action)
+        menu.exec(self.cmd_preview.mapToGlobal(pos))
+
+    def _copy_cmd_to_clipboard(self):
+        cb = QApplication.clipboard()
+        cb.setText(self.cmd_preview.toPlainText())
+        self.append_log("[INFO] Command copied to clipboard.")
+
+    # ---------- Image toggle ----------
+    def _toggle_images(self, checked):
+        """Toggle visibility of banner and overlay images."""
+        visible = not checked
+        self.banner.setVisible(visible)
+        self.overlay_icon.setVisible(visible)
+        self.overlay_logo.setVisible(visible)
+        self.overlay_name.setVisible(visible)
+        if checked:
+            self.hide_images_btn.setText("Show Images")
+            self.append_log("[INFO] Image display hidden to focus on logs.")
+        else:
+            self.hide_images_btn.setText("Hide Images")
+            self.append_log("[INFO] Image display restored.")
+
+    # ---------- End GUI class ----------
 
 
 def run_gui_pyqt6(workers=20, timeout=30, verbose=False):
