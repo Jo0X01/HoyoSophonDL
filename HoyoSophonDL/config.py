@@ -75,9 +75,9 @@ class LauncherConfig:
             region (Region): Game region (default: EUROPE)
             verbose (bool): Enable verbose DEBUG logging if True
         """
+        configure_logger(verbose)
         logger.debug(f"Logger initialized with verbose={'ON' if verbose else 'OFF'}")
         self.verbose = verbose
-        configure_logger(verbose)
         self.setRegion(region)
         self.setBranch(branch)
         logger.debug(f"Config created for region={region.name}, branch={branch.name}")
