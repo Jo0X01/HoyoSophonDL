@@ -107,8 +107,6 @@ python -m HoyoSophonDL --gui
 
 You can turn your Python project into a standalone `.exe` using **auto-py-to-exe**
 
-or check the release page: [HoyoSophonDL GUI for windows 64bit](https://github.com/Jo0X01/HoyoSophonDL/releases/tag/v1.0.0)
-
 ---
 
 ## 🧱 Architecture Target
