@@ -15,15 +15,14 @@ def format_bytes(size: int, decimals: int = 2) -> str:
     size = int(size)
     if size == 0:
         return "0 B"
-    
     units = ["B", "KB", "MB", "GB", "TB", "PB"]
     power = 1024
     i = 0
     while size >= power and i < len(units) - 1:
         size /= power
         i += 1
-    
-    return f"{size:.{decimals}f} {units[i]}"
+    formatted_size = f"{size:.{decimals}f}"
+    return f"{formatted_size} {units[i]}"
 
 def fix_url(url: str, default_scheme="https") -> str:
     url = url.strip()

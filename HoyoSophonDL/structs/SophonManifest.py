@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
 import json
 import os
@@ -26,10 +28,6 @@ class SophonManifestProtoChunkAsset:
     @property
     def identity(self):
         return self.ChunkDecompressedHashMd5
-        uuid.uuid3(
-            uuid.NAMESPACE_DNS,
-            f'{self.ChunkName}:{self.ChunkDecompressedHashMd5}:{self.ChunkSize}:{self.ChunkSizeDecompressed}'
-        )
 
     def getDict(self):
         return {k: (v if not isinstance(v, list) else [_.getDict() for _ in v])

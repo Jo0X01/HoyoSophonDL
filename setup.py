@@ -37,7 +37,7 @@ install_requires = [
 ]
 setup(
     name="HoyoSophonDL",
-    version="1.0.4",
+    version="1.0.5",
     author="Mr.Jo0x01",
     author_email="",
     description=(

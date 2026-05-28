@@ -16,7 +16,6 @@ from HoyoSophonDL.parser import (
     AvaliableGame
 )
 
-# Import logger from config
 from HoyoSophonDL.config import logger
 
 
@@ -172,7 +171,6 @@ class LauncherClient:
                 update_asset = temp_
                 del temp_
                 logger.warning(f"switch update older <=> newer : cannot update from {current_asset.version} to older {update_asset.version}")
-                # raise ValueError(f"[ERROR] Cannot update from older version {current_asset.version} to {update_asset.version}")
             if cur_v == upd_v:
                 return self.get_manifest_assets(game_data, update_asset)
             

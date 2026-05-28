@@ -1,0 +1,53 @@
+# Virtual Environments
+venv/
+.venv/
+env/
+.env/
+ENV/
+conda-env/
+.conda/
+HoyoSophonDL/Include/
+HoyoSophonDL/Lib/
+HoyoSophonDL/Scripts/
+pyvenv.cfg
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+.eggs/
+
+# PyPI / pip
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Env files (secrets)
+.env
+.env.local

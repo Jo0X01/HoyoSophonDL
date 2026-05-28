@@ -75,7 +75,7 @@ class LauncherConfig:
             region (Region): Game region (default: EUROPE)
             verbose (bool): Enable verbose DEBUG logging if True
         """
-        logger.info(f"Logger initialized with verbose={'ON' if verbose else 'OFF'}")
+        logger.debug(f"Logger initialized with verbose={'ON' if verbose else 'OFF'}")
         self.verbose = verbose
         configure_logger(verbose)
         self.setRegion(region)
@@ -127,7 +127,7 @@ class LauncherConfig:
         else:
             logger.error(f"Unknown region provided: {region}")
             raise ValueError(f"Unknown region: {region}")
-        logger.info(f"Region set to {region.name} with API={self.INFO_API}")
+        logger.info(f"Region set to {region.name}")
 
     def setBranch(self, branch: Branch):
         """
@@ -202,14 +202,13 @@ class LauncherConfig:
         Returns:
             str: Fully constructed direct manifest URL.
         """
-        url = fix_url(
-            f"{self.SOPHON_API}?{urllib.parse.urlencode({ 
-                'branch': branch_id,
-                'package_id': package_id,
-                'password': password,
-                'plat_app': self.LauncherPlatformApp,
-                'tag': self.get_correct_version(version)
-            })}"
-        )
+        params = urllib.parse.urlencode({ 
+            'branch': branch_id,
+            'package_id': package_id,
+            'password': password,
+            'plat_app': self.LauncherPlatformApp,
+            'tag': self.get_correct_version(version)
+        })
+        url = fix_url(f"{self.SOPHON_API}?{params}")
         logger.debug(f"Direct manifest URL: {url}")
         return url

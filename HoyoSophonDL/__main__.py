@@ -19,7 +19,7 @@ console = Console()
 
 def rich_download(launcher: HoyoSophonDL, assets, output_dir, workers):
     download_info = launcher.set_download_assets(assets, output_dir, workers)
-    trace: GlobalDownloadData = launcher.trace_download
+    trace = launcher.trace_download
     with Progress(
         TextColumn("[cyan]{task.description}"),
         BarColumn(),
@@ -31,9 +31,9 @@ def rich_download(launcher: HoyoSophonDL, assets, output_dir, workers):
         transient=False,
         refresh_per_second=5,
     ) as progress:
-
+        tsize = trace.TotalSize if trace else 0
         main_task = progress.add_task(
-            f"Downloading {assets.GameData.Name}", total=trace.TotalSize
+            f"Downloading {assets.GameData.Name}", total=tsize
         )
 
         def on_progress(_trace: GlobalDownloadData):
@@ -107,7 +107,8 @@ def main():
     if args.gui:
         try:
             from HoyoSophonDL.gui import run_gui_pyqt6
-        except ImportError:
+        except Exception as e:
+            print(e)
             sys.exit("[ERROR] PyQt6 not installed or not supported on this system.")
         return run_gui_pyqt6(workers=args.threads, timeout=args.timeout, verbose=args.verbose)
 
@@ -158,7 +159,7 @@ def main():
                 game, args.current, args.update, args.category
             )
         console.print(f"[green]Starting download for {game.Name}...[/green]")
-        rich_download(launcher, assets, args.output, args.threads,args.timeout)
+        rich_download(launcher, assets, args.output, args.threads)
 
 
 if __name__ == "__main__":

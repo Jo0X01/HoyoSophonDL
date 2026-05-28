@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sqlite3
 import time
 import requests
@@ -151,7 +153,9 @@ class HoyoDownloader:
         self.manifest = manifest
         self.workers = workers
 
-        _LauncherDownloadMetadata.file_name = f"{get_md5_hash(f'{manifest.GameData.Biz}:{manifest.GameData.ID}'.encode())}.resume"
+        biz_id = f'{manifest.GameData.Biz}:{manifest.GameData.ID}'
+        metadata_hash = get_md5_hash(biz_id.encode())
+        _LauncherDownloadMetadata.file_name = f"{metadata_hash}.resume"
         _LauncherDownloadMetadata.start(self.output_dir)
         t = _LauncherDownloadMetadata.download_trace
         t.TotalSize = manifest.TotalSize
@@ -207,11 +211,14 @@ class HoyoDownloader:
                 for data in response.iter_content(chunk_size=8192 * 8):
                     if not data:
                         continue
-                    self.__safe_callback(t.on_progress_callback, t)
+                    if t.isCancelled:
+                        logger.error(f"Downloading chunk {chunk.identity}, cancelled")
+                        raise DownloadCancelled("[Error] Download Cancelled")
                     f.write(data)
                     f.flush()
                     with t.lock:
                         t.TotalDownloadBytes += len(data)
+                    self.__safe_callback(t.on_progress_callback, t)
             self.__safe_callback(t.on_progress_callback, t)
         except DownloadCancelled:
             logger.warning(f"Chunk {chunk.identity} cancelled")
@@ -251,7 +258,8 @@ class HoyoDownloader:
                 return False
             if not self.__download_chunk(chunk, asset_path):
                 ok = False
-        logger.info(f"Asset: {asset.AssetName} {'OK!' if ok else 'Not OK!'}")
+        status = 'OK!' if ok else 'Not OK!'
+        logger.info(f"Asset: {asset.AssetName} {status}")
         with t.lock:
             t.CompletedAssets += 1
         return True
@@ -299,6 +307,7 @@ class HoyoDownloader:
             logger.info(f"Assembling asset: {asset.AssetFilePath}")
             asset_path = Path(self.main_output_dir, asset.AssetFilePath)
             asset_path.parent.mkdir(parents=True, exist_ok=True)
+            asset_file = open(asset_path, "wb")
 
             for chunk in asset.AssetChunks:
                 chunk_path = Path(self.output_dir, asset.AssetHashMd5) / f"{chunk.identity}.part{chunk.index:03}"
@@ -313,9 +322,9 @@ class HoyoDownloader:
                         if data:
                             md5_hash = get_md5_hash(data)
                             if chunk.ChunkDecompressedHashMd5 == md5_hash:
-                                with open(asset_path, "wb") as asset_file:
-                                    for i in range(0, len(data), 8192):
-                                        asset_file.write(data[i:i+8192])
+                                for i in range(0, len(data), 8192):
+                                    asset_file.write(data[i:i+8192])
+                                    asset_file.flush()
                             else:
                                 logger.warning(
                                     f"Hash mismatch for chunk: {chunk.identity}"
@@ -325,5 +334,8 @@ class HoyoDownloader:
                 except Exception as e:
                     logger.error(f"Failed to decompress {chunk_path}: {e}")
                 finally:
-                    logger.debug(f"Chunk {chunk_path} decompressed in {time.time()-start:.2f}s")
+                    elapsed = f"{time.time()-start:.2f}"
+                    logger.debug(f"Chunk {chunk_path} decompressed in {elapsed}s")
+            
+            asset_file.close()
         return self.output_dir

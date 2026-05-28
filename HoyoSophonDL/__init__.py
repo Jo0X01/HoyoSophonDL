@@ -147,5 +147,5 @@ class HoyoSophonDL:
         )
 
     @property
-    def trace_download(self):
+    def trace_download(self) -> GlobalDownloadData  | None:
         return self._launcher._trace
